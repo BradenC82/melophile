@@ -8,8 +8,8 @@ import {
   Link
 } from "react-router-dom";
 
-import Login from './components/pages/login';
-import Dashboard from './components/pages/dashboard';
+import Login from './components/pages/Login';
+import Dashboard from './components/pages/Dashboard';
 
 export default function App() {
   return (

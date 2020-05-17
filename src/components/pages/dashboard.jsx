@@ -1,64 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import queryString from 'query-string';
-import Card from '../Card';
-
-
-
+import React, { useState, useEffect, useContext } from "react";
+import { SpotifyContext } from "../../services/SpotifyContext";
+import axios from "axios";
+import queryString from "query-string";
+import Card from "../Card";
+import BottomNav from "../BottomNav";
 
 export default function Dashboard() {
+  const { spotifyApi, setNowPlaying, isPlaying, setIsPlaying } = useContext(
+    SpotifyContext
+  );
+  const [name, setName] = useState("");
+  const [tracks, setTracks] = useState([]);
+  const [trackIds, setTrackIds] = useState([]);
+  const [trackFeatures, setTrackFeatures] = useState([]);
 
-    const [name, setName] = useState('');
-    const [tracks, setTracks] = useState([]);
-    const [trackFeatures, setTrackFeatures] = useState([]);
+  useEffect(() => {
+    let parsed = queryString.parse(window.location.search.slice(1));
+    let accessToken = parsed.access_token;
+    spotifyApi.setAccessToken(accessToken);
+    console.log(spotifyApi);
+    spotifyApi.getMySavedTracks().then((response) => {
+      setTracks(response.body.items);
 
-    useEffect(() => {
-        let parsed = queryString.parse(window.location.search.slice(1));
-        let accessToken = parsed.access_token;
+      let trackIDS = response.body.items.map((trackData) => trackData.track.id);
+      setTrackIds(trackIDS);
+      spotifyApi.getAudioFeaturesForTracks(trackIDS).then((response) => {
+        setTrackFeatures(response.body.audio_features);
+      });
+    });
 
-        console.log(accessToken);
+    spotifyApi
+      .getMyCurrentPlaybackState({
+        market: "ES",
+      })
+      .then((response) => {
+        console.log(response);
+      });
+  }, []);
 
-        axios.get('https://api.spotify.com/v1/me', {
-            headers: { 'Authorization': 'Bearer ' + accessToken }
-        }).then(response => {
-            if (response) {
-                setName(response.data.display_name)
-            }
-        }
-        )
+  const playLikedSongs = (track) => {
+    spotifyApi
+      .play({
+        uris: trackIds.map((id) => `spotify:track:${id}`),
+        offset: { uri: `spotify:track:${track.id}` },
+      })
+      .then((response) => {
+        setNowPlaying(track);
+        setIsPlaying(true);
+      });
+  };
 
-        axios.get('https://api.spotify.com/v1/me/tracks', {
-            headers: { 'Authorization': 'Bearer ' + accessToken }
-        }).then(response => {
-            if (response) {
-                setTracks(response.data.items)
-
-                let trackIDS = response.data.items.map(trackData => trackData.track.id)
-
-                axios.get('https://api.spotify.com/v1/audio-features/?ids=' + trackIDS.join(','), {
-                    headers: { 'Authorization': 'Bearer ' + accessToken }
-                }).then(response => {
-                    if (response) {
-                        setTrackFeatures(response.data.audio_features);
-                    }
-                })
-            }
-        }
-        )
-
-    }, [])
-
-    return (
-        <div className="container mx-auto p-4">
-            <h1 className="font-bold text-3xl">Liked Songs</h1>
-            <ul className="">
-                {tracks.map((track,index) => {
-                    return (
-                        <li key={track.track.id} className="my-4"><Card trackData={track} trackFeatureData={trackFeatures.length?trackFeatures[index]:0} /></li>
-                    )
-                })}
-            </ul>
-
-        </div>
-    )
+  return (
+    <>
+      <div className="container mx-auto p-4">
+        <h1 className="font-bold text-3xl">Liked Songs</h1>
+        <ul className="">
+          {tracks.map((track, index) => {
+            return (
+              <li key={track.track.id} className="my-4">
+                <Card
+                  playLikedSongs={playLikedSongs}
+                  trackData={track}
+                  trackFeatureData={
+                    trackFeatures.length ? trackFeatures[index] : 0
+                  }
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <BottomNav tracks={tracks}></BottomNav>
+    </>
+  );
 }

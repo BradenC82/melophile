@@ -25,7 +25,7 @@ exports.login = functions.https.onRequest((request, response) => {
     response.cookie(stateKey, state);
 
     //Requests authorization
-    let scope = 'user-read-private user-read-email user-library-read';
+    let scope = 'user-read-private user-read-email user-library-read streaming user-read-playback-state';
     response.redirect('https://accounts.spotify.com/authorize?' +
         querystring.stringify({
             response_type: 'code',

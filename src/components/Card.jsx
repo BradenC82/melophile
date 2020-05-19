@@ -14,13 +14,13 @@ export default function Card(props) {
     isPlaying,
     setIsPlaying,
   } = useContext(SpotifyContext);
-
+ console.log(props.trackData)
   const play = () => {
-      props.playLikedSongs(props.trackData.track)
-    // spotifyApi.play({uris: [`spotify:track:${props.trackData.track.id}`],})
+      props.playLikedSongs(props.trackData.track.track)
+    // spotifyApi.play({uris: [`spotify:track:${props.trackData.track.track.id}`],})
     //   .then((response) => {
     //     if (response.statusCode === 204) {
-    //       setNowPlaying(props.trackData.track);
+    //       setNowPlaying(props.trackData.track.track);
     //       setIsPlaying(true);
     //     }
     //   });
@@ -33,7 +33,7 @@ export default function Card(props) {
     //   .then((response) => {
     //     console.log(response);
     //     if (response.statusCode === 204) {
-    //       setNowPlaying(props.trackData.track);
+    //       setNowPlaying(props.trackData.track.track);
     //       setIsPlaying(true);
     //     }
     //   });
@@ -48,54 +48,76 @@ export default function Card(props) {
   };
 
   return (
-    <div className="w-full flex flex-col border-2 bg-white rounded-lg p-6">
-      <div className="flex pb-2">
-          
-        <img src={props.trackData.track.album.images[2].url}></img>
-        {nowPlaying.id === props.trackData.track.id && isPlaying ? (
-          <PauseIcon className="h-12 w-12" onClick={pause} />
-        ) : (
-          <PlayIcon className="h-12 w-12" onClick={play} />
-        )}
-        <div className="ml-2 h-16" style={{ overflow: "hidden" }}>
-          <h2
-            className="block text-lg leading-tight font-semibold text-gray-900"
-            style={{ whiteSpace: "nowrap" }}
-          >
-            {props.trackData.track.name}
-          </h2>
-          <p className="mt-2 text-gray-600" style={{ whiteSpace: "nowrap" }}>
-            {props.trackData.track.artists
-              .map((artist) => artist.name)
-              .join(", ")}
-          </p>
+    <div className=" shadow-md w-full flex flex-col  bg-white rounded-lg p-4 " style={{backgroundColor:"#2d3748"}}>
+      <div className=" pb-2 w-full" >
+        
+        <div style={{float:"left"}}>
+          <img src={props.trackData.track.track.album.images[2].url} style={{width:"64px"}}></img>
         </div>
+       
+
+        <div style={{overflow:'hidden'}}>
+       
+          <div className={"pl-2"} style={{float:"right"}}>
+            {nowPlaying.id === props.trackData.track.track.id && isPlaying ? (
+              <PauseIcon className="" style={{float:"right", fill:"#fff", width:"48px", height:"48px"}} onClick={pause}/>
+            ) : (
+              <PlayIcon className="" style={{float:"right", fill:"#fff", width:"48px", height:"48px"}} onClick={play}/>
+            )}
+          </div>
+          
+        
+          <div className="ml-2 h-16" style={{ overflow: "hidden" }}>
+            <h2
+              className="block text-lg leading-tight font-semibold text-white"
+              style={{ whiteSpace: "nowrap" }}
+            >
+              {props.trackData.track.track.name}
+            </h2>
+            <p className="mt-1 text-gray-500" style={{ whiteSpace: "nowrap" }}>
+              {props.trackData.track.track.artists
+                .map((artist) => artist.name)
+                .join(", ")}
+            </p>
+          </div>
+
+          
+          
+        </div>  
+        
+        
       </div>
 
       <div className="flex flex-col w-full">
         <StatRow
-          color="bg-red-500"
-          stat={props.trackFeatureData.danceability}
+          color="#ff6b6b"
+          stat={props.trackData.trackFeatures.danceability}
+          label={"danceability"}
         ></StatRow>
         <StatRow
-          color="bg-green-500"
-          stat={props.trackFeatureData.energy}
+          color="#ffe66d"
+          stat={props.trackData.trackFeatures.energy}
+          label={"energy"}
         ></StatRow>
         <StatRow
-          color="bg-purple-500"
-          stat={props.trackFeatureData.speechiness}
+          color="#78E3FD"
+          stat={props.trackData.trackFeatures.valence}
+          label={"valence"}
         ></StatRow>
         <StatRow
-          color="bg-orange-500"
-          stat={props.trackFeatureData.acousticness}
+          color="#1A535C"
+          stat={props.trackData.trackFeatures.acousticness}
+          label={"acousticness"}
         ></StatRow>
+        {/* <StatRow
+          color="#4ECDC4"
+          stat={props.trackData.trackFeatures.instrumentalness}
+          label={"instrumentalness"}
+        ></StatRow> */}
         <StatRow
-          color="bg-blue-500"
-          stat={props.trackFeatureData.instrumentalness}
-        ></StatRow>
-        <StatRow
-          color="bg-yellow-500"
-          stat={props.trackFeatureData.liveness}
+          color="#F7FFF7"
+          stat={props.trackData.trackFeatures.speechiness}
+          label={"speechiness"}
         ></StatRow>
       </div>
     </div>

@@ -9,10 +9,13 @@ export default function Dashboard() {
   const { spotifyApi, setNowPlaying, isPlaying, setIsPlaying } = useContext(
     SpotifyContext
   );
-  const [name, setName] = useState("");
+
   const [tracks, setTracks] = useState([]);
   const [trackIds, setTrackIds] = useState([]);
-  const [trackFeatures, setTrackFeatures] = useState([]);
+
+  const [featureState, setFeatureState] = useState({});
+  const [sortDirection, setSortDirection] = useState("none");
+  const [activeFeature, setActiveFeature] = useState("");
 
   useEffect(() => {
     let parsed = queryString.parse(window.location.search.slice(1));
@@ -20,12 +23,21 @@ export default function Dashboard() {
     spotifyApi.setAccessToken(accessToken);
     console.log(spotifyApi);
     spotifyApi.getMySavedTracks().then((response) => {
-      setTracks(response.body.items);
+      
+      let tracks = response.body.items;
 
       let trackIDS = response.body.items.map((trackData) => trackData.track.id);
       setTrackIds(trackIDS);
       spotifyApi.getAudioFeaturesForTracks(trackIDS).then((response) => {
-        setTrackFeatures(response.body.audio_features);
+        let trackFeatures = response.body.audio_features;
+
+        setTracks(tracks.map((track,index)=>{
+          return {
+            track:track,
+            trackFeatures: trackFeatures[index]
+          }
+        }))
+        
       });
     });
 
@@ -50,27 +62,63 @@ export default function Dashboard() {
       });
   };
 
+  const filterTracks = (tracks) => {
+    let filteredTracks = [...tracks].filter((track)=>{
+      for (let [key, value] of Object.entries(featureState)) {
+
+        if( track.trackFeatures[key]*100 >= value){
+          return false;
+        }
+      }
+      return true;
+    })
+    return filteredTracks
+  }
+
+  const sortTracks = (tracks) =>{
+    console.log(sortDirection)
+    console.log(activeFeature);
+    if(sortDirection !== "down" && sortDirection !== "up"){
+      console.log("default")
+      return tracks;
+    }
+    console.log("here")
+    let sortedTracks = [...tracks].sort((a,b)=>{
+      if(sortDirection==="down"){
+        return a.trackFeatures[activeFeature] - b.trackFeatures[activeFeature];
+      }else{
+        return b.trackFeatures[activeFeature] - a.trackFeatures[activeFeature]
+      }
+    })
+    return sortedTracks
+  }
+
+  const RenderTracks = () => {
+    let filteredTracks = filterTracks(tracks);
+    let sortedTracks = sortTracks(filteredTracks)
+
+    return sortedTracks.map((track, index) => {
+      return (
+        <li key={track.track.track.id} className="py-2 px-2">
+          <Card
+            playLikedSongs={playLikedSongs}
+            trackData={track}
+          />
+        </li>
+      );
+    })
+
+  }
+
   return (
     <>
-      <div className="container mx-auto p-4">
-        <h1 className="font-bold text-3xl">Liked Songs</h1>
+      <div className="container mx-auto py-2" style={{paddingBottom:"108px"}}>
+        <h1 className="font-bold text-3xl mx-2 text-white">Liked Songs</h1>
         <ul className="">
-          {tracks.map((track, index) => {
-            return (
-              <li key={track.track.id} className="my-4">
-                <Card
-                  playLikedSongs={playLikedSongs}
-                  trackData={track}
-                  trackFeatureData={
-                    trackFeatures.length ? trackFeatures[index] : 0
-                  }
-                />
-              </li>
-            );
-          })}
+          {<RenderTracks></RenderTracks>}
         </ul>
       </div>
-      <BottomNav tracks={tracks}></BottomNav>
+      <BottomNav tracks={tracks} setFeatureState={setFeatureState} setSortDirection={setSortDirection} setActiveFeature={setActiveFeature} sortDirection={sortDirection} activeFeature={activeFeature}></BottomNav>
     </>
   );
 }

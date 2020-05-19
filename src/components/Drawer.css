@@ -1,0 +1,13 @@
+.root{
+    bottom: 108px;
+
+}
+.center {
+   
+    transform: translate(0, 100%);
+}
+
+.normal {
+   
+    transform: translate(0, 54px);
+}

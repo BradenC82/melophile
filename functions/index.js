@@ -44,7 +44,7 @@ exports.callback = functions.https.onRequest((request, response) => {
         let storedState = request.cookies ? request.cookies[stateKey] : null;
 
         if (state === null || state !== storedState) {
-            response.redirect('http:localhost:3000?' +
+            response.redirect('https://melophile-d7325.web.app/?' +
                 querystring.stringify({
                     error: 'state_mismatch'
                 }));
@@ -69,7 +69,7 @@ exports.callback = functions.https.onRequest((request, response) => {
                     let access_token = res.data.access_token;
                     let refresh_token = res.data.refresh_token;
                     console.log(res);
-                    response.redirect('http:localhost:3000/dashboard?' + querystring.stringify({
+                    response.redirect('https://melophile-d7325.web.app/dashboard?' + querystring.stringify({
                         access_token: access_token,
                         refresh_token: refresh_token
                     }));
@@ -77,7 +77,7 @@ exports.callback = functions.https.onRequest((request, response) => {
                 })
                 .catch(err => {
                     console.log(err)
-                    response.redirect('http:localhost:3000?' +
+                    response.redirect('https://melophile-d7325.web.app/?' +
                         querystring.stringify({
                             error: 'access_denied'
                         }));

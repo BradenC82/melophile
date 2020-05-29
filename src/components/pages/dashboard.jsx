@@ -1,9 +1,13 @@
-import React, { useState, useEffect, useContext } from "react";
-import { SpotifyContext } from "../../services/SpotifyContext";
-import axios from "axios";
 import queryString from "query-string";
-import Card from "../Card";
+import React, { useContext, useEffect, useState } from "react";
+import { SpotifyContext } from "../../services/SpotifyContext";
+import Alert from "../Alert";
 import BottomNav from "../BottomNav";
+import Card from "../Card";
+import Info from "../Info";
+import { Link } from "react-router-dom";
+import { ReactComponent as LogoutIcon } from "../../assets/icons/logout.svg";
+
 
 export default function Dashboard() {
   const { spotifyApi, setNowPlaying, isPlaying, setIsPlaying } = useContext(
@@ -17,13 +21,14 @@ export default function Dashboard() {
   const [sortDirection, setSortDirection] = useState("none");
   const [activeFeature, setActiveFeature] = useState("");
 
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
     let parsed = queryString.parse(window.location.search.slice(1));
     let accessToken = parsed.access_token;
     spotifyApi.setAccessToken(accessToken);
     console.log(spotifyApi);
-    spotifyApi.getMySavedTracks().then((response) => {
-      
+    spotifyApi.getMySavedTracks({ limit: 50 }).then((response) => {
       let tracks = response.body.items;
 
       let trackIDS = response.body.items.map((trackData) => trackData.track.id);
@@ -31,13 +36,14 @@ export default function Dashboard() {
       spotifyApi.getAudioFeaturesForTracks(trackIDS).then((response) => {
         let trackFeatures = response.body.audio_features;
 
-        setTracks(tracks.map((track,index)=>{
-          return {
-            track:track,
-            trackFeatures: trackFeatures[index]
-          }
-        }))
-        
+        setTracks(
+          tracks.map((track, index) => {
+            return {
+              track: track,
+              trackFeatures: trackFeatures[index],
+            };
+          })
+        );
       });
     });
 
@@ -50,75 +56,145 @@ export default function Dashboard() {
       });
   }, []);
 
-  const playLikedSongs = (track) => {
+  const loadMore = () => {
+    console.log("here");
     spotifyApi
-      .play({
-        uris: trackIds.map((id) => `spotify:track:${id}`),
-        offset: { uri: `spotify:track:${track.id}` },
+      .getMySavedTracks({
+        limit: 50,
+        offset: tracks.length,
       })
       .then((response) => {
-        setNowPlaying(track);
-        setIsPlaying(true);
+        let tracks = response.body.items;
+        let trackIDS = response.body.items.map(
+          (trackData) => trackData.track.id
+        );
+        setTrackIds((prevIds) => prevIds.concat(trackIDS));
+
+        spotifyApi.getAudioFeaturesForTracks(trackIDS).then((response) => {
+          let trackFeatures = response.body.audio_features;
+
+          setTracks((prevTracks) => {
+            let newTracks = tracks.map((track, index) => {
+              return {
+                track: track,
+                trackFeatures: trackFeatures[index],
+              };
+            });
+            return prevTracks.concat(newTracks);
+          });
+        });
+      });
+  };
+
+  const playLikedSongs = (track) => {
+    setIsPlaying(true);
+    setNowPlaying(track);
+    spotifyApi
+      .play({
+        uris: [`spotify:track:${track.id}`],
+      })
+      .then((response) => {
+        
+      })
+      .catch((err) => {
+        if (err.statusCode === 404) {
+          setOpen(true);
+        }
       });
   };
 
   const filterTracks = (tracks) => {
-    let filteredTracks = [...tracks].filter((track)=>{
+    let filteredTracks = [...tracks].filter((track) => {
       for (let [key, value] of Object.entries(featureState)) {
-
-        if( track.trackFeatures[key]*100 >= value){
+        if (track.trackFeatures[key] * 100 >= value) {
           return false;
         }
       }
       return true;
-    })
-    return filteredTracks
-  }
+    });
+    return filteredTracks;
+  };
 
-  const sortTracks = (tracks) =>{
-    console.log(sortDirection)
+  const sortTracks = (tracks) => {
+    console.log(sortDirection);
     console.log(activeFeature);
-    if(sortDirection !== "down" && sortDirection !== "up"){
-      console.log("default")
+    if (sortDirection !== "down" && sortDirection !== "up") {
+      console.log("default");
       return tracks;
     }
-    console.log("here")
-    let sortedTracks = [...tracks].sort((a,b)=>{
-      if(sortDirection==="down"){
+    console.log("here");
+    let sortedTracks = [...tracks].sort((a, b) => {
+      if (sortDirection === "down") {
         return a.trackFeatures[activeFeature] - b.trackFeatures[activeFeature];
-      }else{
-        return b.trackFeatures[activeFeature] - a.trackFeatures[activeFeature]
+      } else {
+        return b.trackFeatures[activeFeature] - a.trackFeatures[activeFeature];
       }
-    })
-    return sortedTracks
-  }
+    });
+    return sortedTracks;
+  };
 
   const RenderTracks = () => {
     let filteredTracks = filterTracks(tracks);
-    let sortedTracks = sortTracks(filteredTracks)
+    let sortedTracks = sortTracks(filteredTracks);
 
     return sortedTracks.map((track, index) => {
       return (
-        <li key={track.track.track.id} className="py-2 px-2">
-          <Card
-            playLikedSongs={playLikedSongs}
-            trackData={track}
-          />
+        <li key={track.track.track.id} className="py-2 ">
+          <Card playLikedSongs={playLikedSongs} trackData={track} />
         </li>
       );
-    })
-
-  }
+    });
+  };
 
   return (
     <>
-      <div className="container mx-auto py-2" style={{paddingBottom:"108px"}}>
-        <h1 className="font-bold text-3xl mx-2 text-white">Liked Songs</h1>
-        <ul className="">
-          {<RenderTracks></RenderTracks>}
-        </ul>
+      <div
+        className="container mx-auto px-2 py-2"
+        style={{ paddingBottom: "108px" }}
+      >
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="font-bold text-3xl  text-white">Liked Songs</h1>
+            <p className="mt-1 text-gray-500" style={{ whiteSpace: "nowrap" }}>
+              {`Displaying ${tracks.length} tracks`}
+            </p>
+            
+          </div>
+
+          <div style={{display:'inline'}}>
+
+            <Link to='/'>
+              <LogoutIcon style={{display:'inline'}}className="h-8 w-8 mr-2">
+                Logout 
+              </LogoutIcon>
+            </Link>
+            
+            <Info style={{display:'inline'}} ></Info>
+          </div>
+          
+        </div>
+
+        <Alert open={open} setOpen={setOpen}></Alert>
+
+        <ul className="">{<RenderTracks></RenderTracks>}</ul>
+        {tracks.length ? (
+          <button
+            className=" shadow-md rounded-lg p-2 px-4 mb-2   text-md  font-semibold text-white"
+            style={{ backgroundColor: "#2d3748" }}
+            onClick={() => loadMore()}
+          >
+            LOAD MORE
+          </button>
+        ) : null}
       </div>
-      <BottomNav tracks={tracks} setFeatureState={setFeatureState} setSortDirection={setSortDirection} setActiveFeature={setActiveFeature} sortDirection={sortDirection} activeFeature={activeFeature}></BottomNav>
+      <BottomNav
+        tracks={tracks}
+        setFeatureState={setFeatureState}
+        setSortDirection={setSortDirection}
+        setActiveFeature={setActiveFeature}
+        sortDirection={sortDirection}
+        activeFeature={activeFeature}
+      ></BottomNav>
     </>
   );
 }

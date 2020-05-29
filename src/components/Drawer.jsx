@@ -1,23 +1,13 @@
+import Slider from "@material-ui/core/Slider";
+import { withStyles } from '@material-ui/core/styles';
 import React, { useState } from "react";
-import { ReactComponent as CloseIcon } from "../assets/icons/close.svg";
-import "./Drawer.css";
 import { ReactComponent as HamburgerIcon } from "../assets/icons/hamburger.svg";
 import { ReactComponent as SortDownIcon } from "../assets/icons/sortDown.svg";
 import { ReactComponent as SortUpIcon } from "../assets/icons/sortUp.svg";
-
-import Slider from "@material-ui/core/Slider";
-
-import { withStyles, makeStyles } from '@material-ui/core/styles';
-
-const useStyles = makeStyles({
-  root: {
-    color: 'white',
-  },
-});
+import "./Drawer.css";
 
 const BarSlider = withStyles({
   root: {
-    
     height: 10,
   },
   thumb: {
@@ -39,17 +29,14 @@ const BarSlider = withStyles({
   },
   track: {
     height: 10,
-   
   },
   rail: {
     height: 10,
-    
   },
 })(Slider);
 
 export default function Drawer(props) {
   
-
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const drawerToggleHandler = () => {
@@ -57,7 +44,7 @@ export default function Drawer(props) {
   };
 
   let DrawerClasses =
-    "root center transition duration-500 ease-out  w-full bg-gray-800 fixed   z-0 w-auto  ";
+    "root center transition duration-500 ease-out w-full bg-gray-800 fixed   z-0 w-auto  ";
 
   if (drawerOpen) {
     DrawerClasses += "normal";
